@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Generics-->
+    <dimen name="activity_title">22sp</dimen>
+    <dimen name="label">18sp</dimen>
+    <dimen name="text">16sp</dimen>
+    <!-- Home Activity-->
+    <dimen name="home_title">50sp</dimen>
+    <!-- Flashcard Activity-->
+    <dimen name="flash_card_help_text">25sp</dimen>
+    <dimen name="flash_card_text">50sp</dimen>
+    <dimen name="flash_card_flip_labels">25sp</dimen>
+</resources>

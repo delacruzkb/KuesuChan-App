@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="350dp"
+    android:layout_height="500dp">
+
+    <View
+        android:id="@+id/divider"
+        android:layout_width="1dp"
+        android:layout_height="498dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/matchingLeftButton1"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Left 1"
+        app:layout_constraintEnd_toEndOf="@+id/divider"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/matchingLeftButton2"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:text="Left 2"
+        app:layout_constraintBottom_toTopOf="@+id/matchingLeftButton3"
+        app:layout_constraintEnd_toEndOf="@+id/divider"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/matchingLeftButton1" />
+
+    <Button
+        android:id="@+id/matchingLeftButton3"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:text="Left 3"
+        app:layout_constraintBottom_toTopOf="@+id/matchingLeftButton5"
+        app:layout_constraintEnd_toEndOf="@+id/divider"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/matchingLeftButton1" />
+
+    <Button
+        android:id="@+id/matchingLeftButton4"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:text="Left 4"
+        app:layout_constraintBottom_toTopOf="@+id/matchingLeftButton5"
+        app:layout_constraintEnd_toEndOf="@+id/divider"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/matchingLeftButton3" />
+
+    <Button
+        android:id="@+id/matchingLeftButton5"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:text="Left 5"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/divider"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/matchingRightButton1"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Right 1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/divider"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/matchingRightButton2"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:text="Right 2"
+        app:layout_constraintBottom_toTopOf="@+id/matchingRightButton3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/divider"
+        app:layout_constraintTop_toBottomOf="@+id/matchingRightButton1" />
+
+    <Button
+        android:id="@+id/matchingRightButton3"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:text="Right 3"
+        app:layout_constraintBottom_toTopOf="@+id/matchingRightButton5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/divider"
+        app:layout_constraintTop_toBottomOf="@+id/matchingRightButton1" />
+
+    <Button
+        android:id="@+id/matchingRightButton4"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:text="Right 4"
+        app:layout_constraintBottom_toTopOf="@+id/matchingRightButton5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/divider"
+        app:layout_constraintTop_toBottomOf="@+id/matchingRightButton3" />
+
+    <Button
+        android:id="@+id/matchingRightButton5"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:text="Right 5"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/divider" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
