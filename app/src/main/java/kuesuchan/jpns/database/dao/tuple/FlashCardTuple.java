@@ -1,6 +1,5 @@
-package kuesuchan.jpns.tuple;
+package kuesuchan.jpns.database.dao.tuple;
 
-import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 
 public class FlashCardTuple {

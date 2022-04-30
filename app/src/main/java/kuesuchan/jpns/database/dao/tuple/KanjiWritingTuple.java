@@ -1,4 +1,4 @@
-package kuesuchan.jpns.tuple;
+package kuesuchan.jpns.database.dao.tuple;
 
 import androidx.room.ColumnInfo;
 

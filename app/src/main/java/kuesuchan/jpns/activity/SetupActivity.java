@@ -3,6 +3,7 @@ package kuesuchan.jpns.activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -21,7 +22,9 @@ import kuesuchan.jpns.database.dao.KanjiWritingDao;
 import kuesuchan.jpns.database.dao.VocabularyDao;
 import kuesuchan.jpns.database.AppDatabase;
 import kuesuchan.jpns.database.dao.helper.KanjiWritingDaoHelper;
+import kuesuchan.jpns.database.dao.helper.SourceDaoHelper;
 import kuesuchan.jpns.database.dao.helper.VocabularyDaoHelper;
+import kuesuchan.jpns.database.entity.Source;
 
 public class SetupActivity extends AppCompatActivity{
 
@@ -48,6 +51,7 @@ public class SetupActivity extends AppCompatActivity{
     private AppDatabase db;
     private VocabularyDaoHelper vocabularyDaoHelper;
     private KanjiWritingDaoHelper kanjiWritingDaoHelper;
+    private SourceDaoHelper sourceDaoHelper;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +59,7 @@ public class SetupActivity extends AppCompatActivity{
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, getString(R.string.db_name)).build();
         vocabularyDaoHelper = db.getVocabularyDaoHelper();
         kanjiWritingDaoHelper = db.getKanjiWritingDaoHelper();
+        sourceDaoHelper = db.getSourceDaoHelper();
         Intent intent = getIntent();
         mode = intent.getStringExtra("mode");
         setupViews(mode);
@@ -87,11 +92,7 @@ public class SetupActivity extends AppCompatActivity{
         kanjiPromptCheckBox=findViewById(R.id.kanjiPromptCheckBox);
 
         amountSpinner = findViewById(R.id.amountSpinner);
-        //TODO: String list the amounts
-//        amountSpinner.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, test));
 
-        sourceSpinner = findViewById(R.id.sourceSpinner);
-        sourceSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, vocabularyDaoHelper.getSources()));
         sectionCheckBox1=findViewById(R.id.sectionCheckBox1);
         sectionCheckBox2=findViewById(R.id.sectionCheckBox2);
         sectionCheckBox3=findViewById(R.id.sectionCheckBox3);
@@ -145,6 +146,28 @@ public class SetupActivity extends AppCompatActivity{
 
         sectionCheckBoxAll=findViewById(R.id.sectionCheckBoxAll);
         sectionCheckBoxAll.setOnCheckedChangeListener( (compoundButton, checked) -> sectionCheckboxList.stream().forEach(checkbox -> checkbox.setChecked(false)));
+
+        sourceSpinner = findViewById(R.id.sourceSpinner);
+        sourceSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, sourceDaoHelper.getSourceList()));
+        sourceSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int index, long l) {
+                Source source = sourceDaoHelper.getSource(adapterView.getItemAtPosition(index).toString());
+                for( int i=0; i<sectionCheckboxList.size();i++){
+                    if(i+1 <=source.getSectionCount()){
+                        sectionCheckboxList.get(i).setVisibility(View.VISIBLE);
+                    }
+                    else{
+                        sectionCheckboxList.get(i).setVisibility(View.GONE);
+                    }
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
     }
 
     private void finishSetup(){

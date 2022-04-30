@@ -13,12 +13,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.room.util.TableInfo;
 
 import java.util.Arrays;
 import java.util.List;
 
 import kuesuchan.jpns.R;
 import kuesuchan.jpns.database.AppDatabase;
+import kuesuchan.jpns.database.Converters;
 import kuesuchan.jpns.database.dao.helper.KanjiWritingDaoHelper;
 import kuesuchan.jpns.database.dao.helper.VocabularyDaoHelper;
 import kuesuchan.jpns.database.entity.KanjiWriting;
@@ -118,18 +120,18 @@ public class DatabaseInputDialog {
         columnLabel2.setText(VocabularyDaoHelper.Columns.kana.name() + "*");
         columnLabel3.setText(VocabularyDaoHelper.Columns.kanji.name());
         columnLabel4.setText(VocabularyDaoHelper.Columns.help_text.name());
-        columnLabel5.setText(VocabularyDaoHelper.Columns.type.name());
-        columnLabel6.setText(VocabularyDaoHelper.Columns.source.name());
-        columnLabel7.setText(VocabularyDaoHelper.Columns.section.name()+ "(#/#/#)");
+        columnLabel5.setText(VocabularyDaoHelper.Columns.source.name() + "(Source.Section, Source.Section, ...)");
+        columnLabel6.setVisibility(View.GONE);
+        columnEditText6.setVisibility(View.GONE);
+        columnLabel7.setVisibility(View.GONE);
+        columnEditText7.setVisibility(View.GONE);
 
         if(vocabulary != null ){
             columnEditText1.setText(vocabulary.getEnglish());
             columnEditText2.setText(vocabulary.getKana());
             columnEditText3.setText(vocabulary.getKanji());
             columnEditText4.setText(vocabulary.getHelp_text());
-            columnEditText5.setText(vocabulary.getType());
-            columnEditText6.setText(vocabulary.getSource());
-            columnEditText7.setText(vocabulary.getSection());
+            columnEditText5.setText(vocabulary.getSourceString());
         }
     }
 
@@ -141,8 +143,9 @@ public class DatabaseInputDialog {
         columnLabel4.setText(KanjiWritingDaoHelper.Columns.strokes.name());
         columnEditText4.setInputType(InputType.TYPE_CLASS_NUMBER);
         columnLabel5.setText(KanjiWritingDaoHelper.Columns.meaning.name());
-        columnLabel6.setText(KanjiWritingDaoHelper.Columns.source.name());
-        columnLabel7.setText(KanjiWritingDaoHelper.Columns.section.name()+ "(#/#/#)");
+        columnLabel6.setText(KanjiWritingDaoHelper.Columns.source.name() + "(Source.Section, Source.Section, ...)");
+        columnLabel7.setVisibility(View.GONE);
+        columnEditText7.setVisibility(View.GONE);
 
         if(kanjiWriting !=null){
             columnEditText1.setText(kanjiWriting.getKanji());
@@ -150,8 +153,7 @@ public class DatabaseInputDialog {
             columnEditText3.setText(kanjiWriting.getPhonetic_reading());
             columnEditText4.setText(kanjiWriting.getStrokes());
             columnEditText5.setText(kanjiWriting.getMeaning());
-            columnEditText6.setText(kanjiWriting.getSource());
-            columnEditText7.setText(kanjiWriting.getSection());
+            columnEditText6.setText(kanjiWriting.getSourceString());
         }
 
     }
@@ -180,9 +182,7 @@ public class DatabaseInputDialog {
                 kana,
                 columnEditText3.getText().toString(),
                 columnEditText4.getText().toString(),
-                columnEditText5.getText().toString(),
-                columnEditText6.getText().toString(),
-                columnEditText7.getText().toString());
+                Converters.fromStringToStringSet(columnEditText5.getText().toString()));
         Vocabulary conflicItem = vocabularyDaoHelper.getVocabulary(english,kana);
 
         boolean conflict = false;
@@ -191,12 +191,12 @@ public class DatabaseInputDialog {
             vocabularyDaoHelper.insert(newItem);
         } else if (original==null && conflicItem!=null){ // insert with conflicts
             conflict=true;
-        } else if (original!=null && original.pkEquals(newItem)){ // update Non-PK
+        } else if (original!=null && original.equals(newItem)){ // update Non-PK
             vocabularyDaoHelper.update(newItem);
-        } else if (original!=null && !original.pkEquals(newItem) && !newItem.pkEquals(conflicItem)) { // update PK with no conflict
+        } else if (original!=null && !original.equals(newItem) && !newItem.equals(conflicItem)) { // update PK with no conflict
             vocabularyDaoHelper.delete(original);
             vocabularyDaoHelper.insert(newItem);
-        } else if (original!=null && !original.pkEquals(newItem) && newItem.pkEquals(conflicItem)) {  // update PK with conflicts
+        } else if (original!=null && !original.equals(newItem) && newItem.equals(conflicItem)) {  // update PK with conflicts
             conflict=true;
         }
 
@@ -211,14 +211,9 @@ public class DatabaseInputDialog {
             if (!newItem.getHelp_text().equals(conflicItem.getHelp_text())) {
                 conflictStringBuilder .append("\nHelp Text: " + conflicItem.getHelp_text() + " -> " + newItem.getHelp_text());
             }
-            if (!newItem.getType().equals(conflicItem.getType())) {
-                conflictStringBuilder .append("\nType: " + conflicItem.getType() + " -> " + newItem.getType());
-            }
-            if (!newItem.getSource().equals(conflicItem.getSource())) {
-                conflictStringBuilder .append("\nSource: " + conflicItem.getSource() + " -> " + newItem.getSource());
-            }
-            if (!newItem.getSection().equals(newItem.getSection())){
-                conflictStringBuilder .append("\nSection: " + conflicItem.getSection() + " -> " + newItem.getSection());
+            //TODO: make sure this match works even when new item has out of order string
+            if (!newItem.getSourceString().equals(conflicItem.getSourceString())) {
+                conflictStringBuilder .append("\nSource: " + conflicItem.getSourceString()+ " -> " + newItem.getSourceString());
             }
             AlertDialog.Builder conflictAlertBuilder = new AlertDialog.Builder(context);
             conflictAlertBuilder.setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.cancel())
@@ -246,8 +241,7 @@ public class DatabaseInputDialog {
                 columnEditText3.getText().toString(),
                 Integer.parseInt(columnEditText4.getText().toString()),
                 columnEditText5.getText().toString(),
-                columnEditText6.getText().toString(),
-                columnEditText7.getText().toString());
+                Converters.fromStringToStringSet(columnEditText6.getText().toString()));
         KanjiWriting conflicItem = kanjiWritingDaoHelper.getKanjiWriting(kanji);
 
         boolean conflict = false;
@@ -256,12 +250,12 @@ public class DatabaseInputDialog {
             kanjiWritingDaoHelper.insert(newItem);
         } else if (original==null && conflicItem!=null){ // insert with conflicts
             conflict=true;
-        } else if (original!=null && original.pkEquals(newItem)){ // update Non-PK
+        } else if (original!=null && original.equals(newItem)){ // update Non-PK
             kanjiWritingDaoHelper.update(newItem);
-        } else if (original!=null && !original.pkEquals(newItem) && !newItem.pkEquals(conflicItem)) { // update PK with no conflict
+        } else if (original!=null && !original.equals(newItem) && !newItem.equals(conflicItem)) { // update PK with no conflict
             kanjiWritingDaoHelper.delete(original);
             kanjiWritingDaoHelper.insert(newItem);
-        } else if (original!=null && !original.pkEquals(newItem) && newItem.pkEquals(conflicItem)) {  // update PK with conflicts
+        } else if (original!=null && !original.equals(newItem) && newItem.equals(conflicItem)) {  // update PK with conflicts
             conflict=true;
         }
 
@@ -281,11 +275,9 @@ public class DatabaseInputDialog {
             if (!newItem.getMeaning().equals(conflicItem.getMeaning())) {
                 conflictStringBuilder .append("\nMeaning: " + conflicItem.getMeaning() + " -> " + newItem.getMeaning());
             }
-            if (!newItem.getSource().equals(conflicItem.getSource())) {
-                conflictStringBuilder .append("\nSource: " + conflicItem.getSource() + " -> " + newItem.getSource());
-            }
-            if (!newItem.getSection().equals(newItem.getSection())){
-                conflictStringBuilder .append("\nSection: " + conflicItem.getSection() + " -> " + newItem.getSection());
+            //TODO: make sure this match works even when new item has out of order string
+            if (!newItem.getSourceString().equals(conflicItem.getSourceString())) {
+                conflictStringBuilder .append("\nSource: " + conflicItem.getSourceString()+ " -> " + newItem.getSourceString());
             }
             AlertDialog.Builder conflictAlertBuilder = new AlertDialog.Builder(context);
             conflictAlertBuilder.setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.cancel())

@@ -11,10 +11,8 @@ import java.util.List;
 
 import io.reactivex.Completable;
 import io.reactivex.Single;
-import kuesuchan.jpns.database.dao.helper.KanjiWritingDaoHelper;
 import kuesuchan.jpns.database.entity.KanjiWriting;
-import kuesuchan.jpns.database.entity.Vocabulary;
-import kuesuchan.jpns.tuple.KanjiWritingTuple;
+import kuesuchan.jpns.database.dao.tuple.KanjiWritingTuple;
 
 @Dao
 public interface KanjiWritingDao {
@@ -34,11 +32,8 @@ public interface KanjiWritingDao {
     @Query("SELECT * from KanjiWriting where kanji=:kanji")
     Single<KanjiWriting> getKanjiWriting(String kanji);
 
-    @Query("SELECT kanji, japanese_reading, phonetic_reading, strokes, meaning FROM KanjiWriting WHERE source=:source limit :amount")
-    Single<List<KanjiWritingTuple>> getFlashCards(int amount, String source);
-
-    @Query("SELECT kanji, japanese_reading, phonetic_reading, strokes, meaning FROM KanjiWriting WHERE source=:source and section in (:section) limit :amount")
-    Single<List<KanjiWritingTuple>> getFlashCardsBySections(int amount, String source, List<Integer> section);
+    @Query("SELECT kanji, japanese_reading, phonetic_reading, strokes, meaning FROM KanjiWriting WHERE :sourceCondition limit :amount")
+    Single<List<KanjiWritingTuple>> getKanjiWritingTuples(int amount, String sourceCondition);
 
     @Query("SELECT * from KanjiWriting where :column LIKE '%' + :input + '%'")
     Single<List<KanjiWriting>> search(String column, String input);

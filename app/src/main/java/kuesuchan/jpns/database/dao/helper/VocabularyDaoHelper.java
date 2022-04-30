@@ -1,11 +1,16 @@
 package kuesuchan.jpns.database.dao.helper;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
+import kuesuchan.jpns.database.dao.SourceDao;
 import kuesuchan.jpns.database.dao.VocabularyDao;
+import kuesuchan.jpns.database.dao.tuple.FlashCardTuple;
 import kuesuchan.jpns.database.entity.Vocabulary;
-import kuesuchan.jpns.tuple.FlashCardTuple;
 
 public class VocabularyDaoHelper {
     public static enum Columns{
@@ -13,50 +18,51 @@ public class VocabularyDaoHelper {
         kana,
         kanji,
         help_text,
-        type,
-        source,
-        section
+        source
     }
 
-    private VocabularyDao dao;
+    private final Scheduler DEFAULT_SCHEDULER = Schedulers.io();
 
-    public VocabularyDaoHelper(VocabularyDao dao) {
-        this.dao = dao;
+    private VocabularyDao vocabularyDao;
+
+    public VocabularyDaoHelper(VocabularyDao vocabularyDao) {
+        this.vocabularyDao = vocabularyDao;
     }
 
-    public void insert(Vocabulary... vocabularies) {
-        dao.insert(vocabularies).subscribeOn(Schedulers.io()).subscribe();
+    public void insert(Vocabulary... vocabulary){
+        vocabularyDao.insert(vocabulary).subscribeOn(DEFAULT_SCHEDULER).subscribe();
     }
 
-    public void delete(Vocabulary... vocabulary) {
-        dao.insert(vocabulary).subscribeOn(Schedulers.io()).subscribe();
+    public void delete(Vocabulary... vocabulary){
+        vocabularyDao.delete(vocabulary).subscribeOn(DEFAULT_SCHEDULER).subscribe();
     }
 
-    public void update(Vocabulary vocabulary) {
-        dao.update(vocabulary).subscribeOn(Schedulers.io()).subscribe();
+    public void update(Vocabulary vocabulary){
+        vocabularyDao.update(vocabulary).subscribeOn(DEFAULT_SCHEDULER).subscribe();
     }
 
-    public List<String> getSources() {
-        return dao.getSources().subscribeOn(Schedulers.io()).blockingGet();
+    public Vocabulary getVocabulary(String english, String kana){
+        return vocabularyDao.getVocabulary(english,kana).blockingGet();
     }
 
-    public Integer getMaxSection() {
-        return dao.getMaxSection().subscribeOn(Schedulers.io()).blockingGet();
+    public List<Vocabulary> search(Columns column, String input){
+        return vocabularyDao.search(column.name(), input).blockingGet();
     }
 
-    public Vocabulary getVocabulary(String english, String kana) {
-        return dao.getVocabulary(english, kana).subscribeOn(Schedulers.io()).blockingGet();
+    public List<FlashCardTuple> getFlashCards(int amount, Set<String> sources){
+        StringBuilder sourceCondition = new StringBuilder();
+        sources.forEach(source->{
+            sourceCondition.append(Columns.source.name().toUpperCase() + "LIKE '%' + " + source.toUpperCase() + " + '%'" );
+            sourceCondition.append(" or ");
+        });
+        sourceCondition.delete(sourceCondition.lastIndexOf("or"), sourceCondition.length()-1);
+
+
+        return vocabularyDao.getFlashCards(amount, sourceCondition.toString()).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
     }
 
-    public List<FlashCardTuple> getFlashCards(int amount, String source) {
-        return dao.getFlashCards(amount, source).subscribeOn(Schedulers.io()).blockingGet();
+    public static List<String> getColumnList() {
+        return Arrays.stream(Columns.values()).map(Enum::name).collect(Collectors.toList());
     }
 
-    public List<FlashCardTuple> getFlashCardsBySection(int amount, String source, List<Integer> sections) {
-        return dao.getFlashCardsBySection(amount, source, sections).subscribeOn(Schedulers.io()).blockingGet();
-    }
-
-    public List<Vocabulary> search(Columns column, String input) {
-        return dao.search(column.name(), input).subscribeOn(Schedulers.io()).blockingGet();
-    }
 }

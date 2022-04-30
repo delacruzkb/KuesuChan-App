@@ -7,7 +7,9 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import kuesuchan.jpns.R;
 import kuesuchan.jpns.database.entity.Vocabulary;
@@ -26,18 +28,12 @@ public class FlashCardActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_flash_card);
         setupViews();
-
         currentCardIndex =0;
-        //change this depending on prompt setting
+        //TODO: figure out prompt from intent
         currentWritingStyleIndex=0;
 
-        //populate list using dao
+        //TODO: get from intent
         vocabularyList = new ArrayList<>();
-        vocabularyList.add(new Vocabulary("English", "Kana", "Kanji", "Help Text 1", "Type", "Source", 1 ));
-        vocabularyList.add(new Vocabulary("English", "Kana", "Kanji", "Help Text 2", "Type", "Source", 1 ));
-        vocabularyList.add(new Vocabulary("English", "Kana", "Kanji", "Help Text 3", "Type", "Source", 1 ));
-        vocabularyList.add(new Vocabulary("English", "Kana", "Kanji", "Help Text 4", "Type", "Source", 1 ));
-        vocabularyList.add(new Vocabulary("English", "Kana", "Kanji", "Help Text 5", "Type", "Source", 1 ));
         loadCard(0);
     }
 

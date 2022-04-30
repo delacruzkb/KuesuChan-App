@@ -1,17 +1,19 @@
 package kuesuchan.jpns.database.dao.helper;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.reactivex.schedulers.Schedulers;
 import kuesuchan.jpns.database.dao.KanjiWritingDao;
 import kuesuchan.jpns.database.entity.KanjiWriting;
-import kuesuchan.jpns.tuple.KanjiWritingTuple;
+import kuesuchan.jpns.database.dao.tuple.KanjiWritingTuple;
 
 public class KanjiWritingDaoHelper{
 
     public enum Columns{
-        kanji,japanese_reading,phonetic_reading,strokes,meaning,source,section;
+        kanji,japanese_reading,phonetic_reading,strokes,meaning,source;
     }
 
     private KanjiWritingDao dao;
@@ -42,15 +44,21 @@ public class KanjiWritingDaoHelper{
         return dao.getKanjiWriting(kanji).subscribeOn(Schedulers.io()).blockingGet();
     }
 
-    public List<KanjiWritingTuple> getFlashCards(int amount, String source) {
-        return dao.getFlashCards(amount, source).subscribeOn(Schedulers.io()).blockingGet();
-    }
-
-    public List<KanjiWritingTuple> getFlashCardsBySections(int amount, String source, List<Integer> section) {
-        return dao.getFlashCardsBySections(amount, source, section).subscribeOn(Schedulers.io()).blockingGet();
+    public List<KanjiWritingTuple> getKanjiWritingTuples(int amount, Set<String> sources) {
+        StringBuilder sourceCondition = new StringBuilder();
+        sources.forEach(source->{
+            sourceCondition.append(VocabularyDaoHelper.Columns.source.name().toUpperCase() + "LIKE '%' + " + source.toUpperCase() + " + '%'" );
+            sourceCondition.append(" or ");
+        });
+        sourceCondition.delete(sourceCondition.lastIndexOf("or"), sourceCondition.length()-1);
+        return dao.getKanjiWritingTuples(amount, sourceCondition.toString()).subscribeOn(Schedulers.io()).blockingGet();
     }
 
     public List<KanjiWriting> search(Columns columns, String input) {
         return dao.search(columns.name(), input).subscribeOn(Schedulers.io()).blockingGet();
+    }
+
+    public static List<String> getColumnList() {
+        return Arrays.stream(VocabularyDaoHelper.Columns.values()).map(Enum::name).collect(Collectors.toList());
     }
 }
