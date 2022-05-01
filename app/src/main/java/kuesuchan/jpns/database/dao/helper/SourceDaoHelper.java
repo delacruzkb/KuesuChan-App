@@ -1,11 +1,13 @@
 package kuesuchan.jpns.database.dao.helper;
 
 import androidx.room.Delete;
+import androidx.room.EmptyResultSetException;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,22 +47,34 @@ public class SourceDaoHelper {
     }
 
     public Source getSource(String source){
-        return sourceDao.getSource(source).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        try{
+            return sourceDao.getSource(source).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        } catch (EmptyResultSetException e) {
+            return null;
+        }
     }
 
     public List<Source> search(Columns column, String input){
-        return sourceDao.search(column.name(), input).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        try{
+            return sourceDao.search(column.name(), input).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        } catch (EmptyResultSetException e) {
+            return null;
+        }
     }
 
     public List<String> getSourceList(){
-        return sourceDao.getSources().subscribeOn(DEFAULT_SCHEDULER).blockingGet().stream().map(Source::getSource).collect(Collectors.toList());
+        try{
+            return sourceDao.getSources().subscribeOn(DEFAULT_SCHEDULER).blockingGet().stream().map(Source::getSource).collect(Collectors.toList());
+        } catch (EmptyResultSetException e) {
+            return null;
+        }
     }
 
     public static String toSourceSting(String source, int section){
         return source + "." + section;
     }
     public static List<String> getColumnList() {
-        return Arrays.stream(VocabularyDaoHelper.Columns.values()).map(Enum::name).collect(Collectors.toList());
+        return Arrays.stream(Columns.values()).map(Enum::name).collect(Collectors.toList());
     }
 
 }

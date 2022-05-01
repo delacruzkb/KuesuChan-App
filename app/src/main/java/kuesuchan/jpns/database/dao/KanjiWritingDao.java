@@ -26,10 +26,7 @@ public interface KanjiWritingDao {
     @Update
     Completable update(KanjiWriting kanjiWriting);
 
-    @Query("SELECT COUNT(*) from KanjiWriting")
-    Single<Integer> getRowCount();
-
-    @Query("SELECT * from KanjiWriting where kanji=:kanji")
+    @Query("SELECT * from KanjiWriting where UPPER(kanji)=UPPER(:kanji)")
     Single<KanjiWriting> getKanjiWriting(String kanji);
 
     @Query("SELECT kanji, japanese_reading, phonetic_reading, strokes, meaning FROM KanjiWriting WHERE :sourceCondition limit :amount")

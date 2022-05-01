@@ -1,5 +1,7 @@
 package kuesuchan.jpns.database.dao.helper;
 
+import androidx.room.EmptyResultSetException;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -42,11 +44,20 @@ public class VocabularyDaoHelper {
     }
 
     public Vocabulary getVocabulary(String english, String kana){
-        return vocabularyDao.getVocabulary(english,kana).blockingGet();
+        try{
+            return vocabularyDao.getVocabulary(english,kana).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        } catch (EmptyResultSetException e){
+            return null;
+        }
     }
 
     public List<Vocabulary> search(Columns column, String input){
-        return vocabularyDao.search(column.name(), input).blockingGet();
+
+        try{
+            return vocabularyDao.search(column.name(), input).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        } catch (EmptyResultSetException e){
+            return null;
+        }
     }
 
     public List<FlashCardTuple> getFlashCards(int amount, Set<String> sources){
@@ -56,9 +67,13 @@ public class VocabularyDaoHelper {
             sourceCondition.append(" or ");
         });
         sourceCondition.delete(sourceCondition.lastIndexOf("or"), sourceCondition.length()-1);
+        try{
+            return vocabularyDao.getFlashCards(amount, sourceCondition.toString()).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        } catch (EmptyResultSetException e){
+            return null;
+        }
 
 
-        return vocabularyDao.getFlashCards(amount, sourceCondition.toString()).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
     }
 
     public static List<String> getColumnList() {

@@ -87,7 +87,21 @@ public class DatabaseActivity extends AppCompatActivity{
 
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
-                //do nothing
+//                List<String> columnList = new ArrayList<>();
+//                switch ((AppDatabase.Table) adapterView.getSelectedItem()){
+//                    case Vocabulary:
+//                        columnList = VocabularyDaoHelper.getColumnList();
+//                        break;
+//                    case Kanji_Writing:
+//                        columnList = KanjiWritingDaoHelper.getColumnList();
+//                        break;
+//                    case Source:
+//                        columnList = SourceDaoHelper.getColumnList();
+//                    default:
+//                        break;
+//                }
+//
+//                searchTypeSpinner.setAdapter(new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item, columnList));
             }
         });
 
@@ -133,15 +147,15 @@ public class DatabaseActivity extends AppCompatActivity{
 
     private void resetDatabase(){
         //TODO: Prompt and loading dialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Confirm");
         builder.setMessage("Are you sure you want to reset to default data?");
         builder.setPositiveButton("Reset", ((dialogInterface, i) -> {
             LoadingDialog dialog = new LoadingDialog(DatabaseActivity.this);
             dialog.startLoadingDialog();
             Completable.create(emitter -> db.clearAllTables()).subscribeOn(Schedulers.io()).subscribe();
-            loadVocabulary(vocabularyDaoHelper, "data-n5-vocabulary.csv", "N5");
-            loadKanjiWriting(kanjiWritingDaoHelper, "data-n5-kanji-writing.csv", "N5");
+            loadVocabulary(vocabularyDaoHelper, "KuesuChan-Data - N5-Vocabulary.csv", "N5");
+            loadKanjiWriting(kanjiWritingDaoHelper, "KuesuChan-Data - N5-Kanji.csv", "N5");
             dialog.dismissDialog();
         }));
         AlertDialog dialog = builder.create();
@@ -167,7 +181,7 @@ public class DatabaseActivity extends AppCompatActivity{
                                 String source = data[4];
                                 int section = Integer.parseInt(data[5]);
                                 Source dbSource = sourceDaoHelper.getSource(data[4]);
-                                if(dbSource.getSectionCount() < section){
+                                if(dbSource != null && dbSource.getSectionCount() < section){
                                     dbSource.setSectionCount(section);
                                     sourceDaoHelper.update(dbSource);
                                 }
@@ -177,30 +191,30 @@ public class DatabaseActivity extends AppCompatActivity{
                 Vocabulary newVocab = vocabularyList.get(i);
                 Vocabulary dbVocab = dao.getVocabulary(newVocab.getEnglish(), newVocab.getKana());
                 if(dbVocab !=null){
-                    if(newVocab.getKanji().equals("")) {
+                    if(newVocab.getKanji().equals("") || newVocab.getKanji().equalsIgnoreCase(dbVocab.getKanji())) {
                         newVocab.setKanji(dbVocab.getKanji());
                     } else if(!dbVocab.getKanji().equals("")) {
                         throw new Exception("Kanji Conflict for " + newVocab.toString() + " \n and " +dbVocab.toString());
                     }
 
-                    if(newVocab.getHelp_text().equals("")) {
+                    if(newVocab.getHelp_text().equals("") || newVocab.getHelp_text().equalsIgnoreCase(dbVocab.getHelp_text())) {
                         newVocab.setHelp_text(dbVocab.getHelp_text());
                     } else if(!dbVocab.getHelp_text().equals("")) {
                         throw new Exception("Help_Text Conflict for " + newVocab.toString() + " \n and " +dbVocab.toString());
                     }
 
-                    newVocab.addSource(dbVocab.getSources());
+                    newVocab.addSources(dbVocab.getSources());
                 }
                 dao.insert(newVocab);
             }
         } catch(Exception e){
             Toast.makeText(this, "Error loading "+ name +" Vocabulary", Toast.LENGTH_SHORT).show();
-
+            System.out.println("ERROR ERROR " + e.getMessage());
+            System.out.println(e.getStackTrace());
         }
     }
 
     private void loadKanjiWriting(KanjiWritingDaoHelper dao, String fileName, String name){
-        if(dao.getRowCount()==0){
             try{
                 CSVReader reader =
                         new CSVReaderBuilder(new InputStreamReader(getApplicationContext().getAssets().open(fileName)))
@@ -210,33 +224,64 @@ public class DatabaseActivity extends AppCompatActivity{
                         reader
                                 .readAll()
                                 .stream()
-                                .map(data ->{
-                                    String kanji;
+                                .map(data -> {
+                                    String kanji = data[0];
 
-                                    String japanese_reading;
+                                    String japanese_reading = data[1];
 
-                                    String phonetic_reading;
+                                    String phonetic_reading = data[2];
 
-                                    int strokes;
+                                    int strokes = Integer.parseInt(data[3]);
 
-                                    String meaning;
+                                    String meaning = data[4];
 
-                                    String source = data[4];
-                                    int section = Integer.parseInt(data[5]);
-                                    Source dbSource = sourceDaoHelper.getSource(data[4]);
-                                    if(dbSource.getSectionCount() < section){
+                                    String source = data[5];
+                                    int section = Integer.parseInt(data[6]);
+                                    Source dbSource = sourceDaoHelper.getSource(source);
+                                    if (dbSource != null && dbSource.getSectionCount() < section) {
                                         dbSource.setSectionCount(section);
                                         sourceDaoHelper.update(dbSource);
                                     }
-                                }
-                                        new KanjiWriting(data[0],data[1],data[2],Integer.parseInt(data[3]),data[4], data[5],data[6])).collect(Collectors.toList());
+                                    return new KanjiWriting(kanji,japanese_reading,phonetic_reading,strokes, meaning, SourceDaoHelper.toSourceSting(source, section));
+                                }).collect(Collectors.toList());
                 for ( int i =0; i< kanjiWritingsList.size(); i++){
+                    KanjiWriting newKanjiWriting = kanjiWritingsList.get(i);
+                    KanjiWriting dbKanjiWriting = dao.getKanjiWriting(newKanjiWriting.getKanji());
+                    if(dbKanjiWriting !=null){
+                        if(newKanjiWriting.getJapanese_reading().equals("") || newKanjiWriting.getJapanese_reading().equalsIgnoreCase(dbKanjiWriting.getJapanese_reading())) {
+                            newKanjiWriting.setJapanese_reading(dbKanjiWriting.getJapanese_reading());
+                        } else if(!dbKanjiWriting.getJapanese_reading().equals("")) {
+                            throw new Exception("Japanese Reading Conflict for " + newKanjiWriting.toString() + " \n and " +dbKanjiWriting.toString());
+                        }
+
+                        if(newKanjiWriting.getPhonetic_reading().equals("") || newKanjiWriting.getPhonetic_reading().equalsIgnoreCase(dbKanjiWriting.getPhonetic_reading())) {
+                            newKanjiWriting.setPhonetic_reading(dbKanjiWriting.getPhonetic_reading());
+                        } else if(!dbKanjiWriting.getPhonetic_reading().equals("")) {
+                            throw new Exception("Phonetic ReadingConflict for " + newKanjiWriting.toString() + " \n and " +dbKanjiWriting.toString());
+                        }
+
+
+                        if(newKanjiWriting.getStrokes() != 0 || newKanjiWriting.getStrokes() == dbKanjiWriting.getStrokes()) {
+                            newKanjiWriting.setStrokes(dbKanjiWriting.getStrokes());
+                        } else if(dbKanjiWriting.getStrokes() !=0) {
+                            throw new Exception("Strokes Conflict for " + newKanjiWriting.toString() + " \n and " +dbKanjiWriting.toString());
+                        }
+
+                        if(newKanjiWriting.getMeaning().equals("") || newKanjiWriting.getMeaning().equalsIgnoreCase(dbKanjiWriting.getMeaning())) {
+                            newKanjiWriting.setMeaning(dbKanjiWriting.getMeaning());
+                        } else if(!dbKanjiWriting.getMeaning().equals("")) {
+                            throw new Exception("Meaning Conflict for " + newKanjiWriting.toString() + " \n and " +dbKanjiWriting.toString());
+                        }
+
+                        newKanjiWriting.addSources(dbKanjiWriting.getSources());
+                    }
                     dao.insert(kanjiWritingsList.get(i));
                 }
             } catch(Exception e){
                 Toast.makeText(this, "Error loading "+ name +" KanjiWriting", Toast.LENGTH_SHORT).show();
+                System.out.println("ERROR ERROR " + e.getMessage());
+                System.out.println(e.getStackTrace());
             }
-        }
     }
 
 }

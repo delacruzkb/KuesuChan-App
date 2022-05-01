@@ -50,12 +50,12 @@ public class KanjiWriting {
 
     @Override
     public String toString() {
-        return "\nKanji='" + kanji + '\'' +
-                "\nJapanese_reading='" + japanese_reading + '\'' +
-                "\nPhonetic_reading='" + phonetic_reading + '\'' +
-                "\nStrokes=" + strokes +
-                "\nMeaning='" + meaning + '\'' +
-                "\nsources=" + sources;
+        return "Kanji: '" + kanji + "'" +
+                "\nJapanese_reading: '" + japanese_reading + "'" +
+                "\nPhonetic_reading: '" + phonetic_reading + "'" +
+                "\nStrokes: " + strokes +
+                "\nMeaning: '" + meaning + "'" +
+                "\nsources: " + sources;
     }
 
     @Override
@@ -118,6 +118,10 @@ public class KanjiWriting {
 
     public void addSource(@NonNull String source){
         this.sources.add(source);
+    }
+
+    public void addSources(Set<String> sources){
+        this.sources.addAll(sources);
     }
 
     public String getSourceString(){

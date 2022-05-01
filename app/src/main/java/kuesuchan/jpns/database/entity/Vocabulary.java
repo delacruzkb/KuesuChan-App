@@ -52,11 +52,11 @@ public class Vocabulary {
 
     @Override
     public String toString() {
-        return "English='" + english +
-                "\nKana='" + kana +
-                "\nKanji='" + kanji +
-                "\nHelp_text='" + help_text +
-                "\nSources=" + sources;
+        return "English: '" + english + "'"+
+                "\nKana: '" + kana + "'"+
+                "\nKanji: '" + kanji + "'"+
+                "\nHelp_text: '" + help_text + "'"+
+                "\nSources: " + sources;
     }
 
     @Override
@@ -124,7 +124,7 @@ public class Vocabulary {
         sources.add(source);
     }
 
-    public void addSource(Set<String> sources){
+    public void addSources(Set<String> sources){
         this.sources.addAll(sources);
     }
 }

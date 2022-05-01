@@ -17,8 +17,8 @@ public class Source {
 
     @Override
     public String toString() {
-        return "Source='" + source +
-                "\nSectionCount=" + sectionCount;
+        return "Source: '" + source + "'" +
+                "\nSectionCount: " + sectionCount;
     }
 
     @Override

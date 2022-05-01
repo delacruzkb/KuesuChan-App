@@ -25,7 +25,7 @@ public interface SourceDao {
     @Update
     Completable update(Source source);
 
-    @Query("SELECT * from SOURCE where source LIKE :source")
+    @Query("SELECT * from SOURCE where UPPER(source) LIKE UPPER(:source)")
     Single<Source> getSource(String source);
 
     @Query("SELECT * from SOURCE where UPPER(:column) LIKE '%' + UPPER(:input) + '%'")

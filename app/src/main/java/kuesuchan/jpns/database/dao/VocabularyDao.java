@@ -26,7 +26,7 @@ public interface VocabularyDao {
     @Update
     Completable update(Vocabulary vocabulary);
 
-    @Query("SELECT * FROM VOCABULARY where english=:english and kana=:kana")
+    @Query("SELECT * FROM VOCABULARY where UPPER(english)=UPPER(:english) and UPPER(kana)=UPPER(:kana)")
     Single<Vocabulary> getVocabulary(String english, String kana);
 
     @Query("SELECT * from Vocabulary where UPPER(:column) LIKE '%' + UPPER(:input) + '%'")

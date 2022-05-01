@@ -1,5 +1,7 @@
 package kuesuchan.jpns.database.dao.helper;
 
+import androidx.room.EmptyResultSetException;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -36,12 +38,12 @@ public class KanjiWritingDaoHelper{
         dao.update(kanjiWriting).subscribeOn(Schedulers.io()).subscribe();
     }
 
-    public Integer getRowCount() {
-        return dao.getRowCount().subscribeOn(Schedulers.io()).blockingGet();
-    }
-
     public KanjiWriting getKanjiWriting(String kanji) {
-        return dao.getKanjiWriting(kanji).subscribeOn(Schedulers.io()).blockingGet();
+        try{
+            return dao.getKanjiWriting(kanji).subscribeOn(Schedulers.io()).blockingGet();
+        } catch (EmptyResultSetException e){
+            return null;
+        }
     }
 
     public List<KanjiWritingTuple> getKanjiWritingTuples(int amount, Set<String> sources) {
@@ -51,14 +53,22 @@ public class KanjiWritingDaoHelper{
             sourceCondition.append(" or ");
         });
         sourceCondition.delete(sourceCondition.lastIndexOf("or"), sourceCondition.length()-1);
-        return dao.getKanjiWritingTuples(amount, sourceCondition.toString()).subscribeOn(Schedulers.io()).blockingGet();
+        try{
+            return dao.getKanjiWritingTuples(amount, sourceCondition.toString()).subscribeOn(Schedulers.io()).blockingGet();
+        } catch (EmptyResultSetException e){
+            return null;
+        }
     }
 
     public List<KanjiWriting> search(Columns columns, String input) {
-        return dao.search(columns.name(), input).subscribeOn(Schedulers.io()).blockingGet();
+        try{
+            return dao.search(columns.name(), input).subscribeOn(Schedulers.io()).blockingGet();
+        } catch (EmptyResultSetException e){
+            return null;
+        }
     }
 
     public static List<String> getColumnList() {
-        return Arrays.stream(VocabularyDaoHelper.Columns.values()).map(Enum::name).collect(Collectors.toList());
+        return Arrays.stream(Columns.values()).map(Enum::name).collect(Collectors.toList());
     }
 }
