@@ -214,6 +214,7 @@ public class DatabaseActivity extends AppCompatActivity{
         }
     }
 
+    //TODO: improve logging for csv errors
     private void loadKanjiWriting(KanjiWritingDaoHelper dao, String fileName, String name){
             try{
                 CSVReader reader =
