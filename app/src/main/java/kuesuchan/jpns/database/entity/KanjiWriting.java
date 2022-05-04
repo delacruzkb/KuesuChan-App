@@ -3,11 +3,7 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import kuesuchan.jpns.database.Converters;
@@ -112,23 +108,23 @@ public class KanjiWriting {
         return sources;
     }
 
-    public void setSources(@NonNull Set<String> sources) {
-        this.sources = sources;
-    }
-
-    public void addSource(@NonNull String source){
-        this.sources.add(source);
-    }
-
-    public void addSources(Set<String> sources){
-        this.sources.addAll(sources);
-    }
-
     public String getSourceString(){
         return Converters.stringSetToString(sources);
     }
 
+    public void setSources(@NonNull Set<String> sources) {
+        this.sources = sources;
+    }
+
     public void setSourceFromString(@NonNull String sources) {
         this.sources = Converters.fromStringToStringSet(sources);
+    }
+
+    public void addSource(String source){
+        sources.add(source);
+    }
+
+    public void addSources(Set<String> sources){
+        this.sources.addAll(sources);
     }
 }

@@ -1,8 +1,11 @@
 package kuesuchan.jpns.activity;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -87,35 +90,31 @@ public class DatabaseActivity extends AppCompatActivity{
 
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
-//                List<String> columnList = new ArrayList<>();
-//                switch ((AppDatabase.Table) adapterView.getSelectedItem()){
-//                    case Vocabulary:
-//                        columnList = VocabularyDaoHelper.getColumnList();
-//                        break;
-//                    case Kanji_Writing:
-//                        columnList = KanjiWritingDaoHelper.getColumnList();
-//                        break;
-//                    case Source:
-//                        columnList = SourceDaoHelper.getColumnList();
-//                    default:
-//                        break;
-//                }
-//
-//                searchTypeSpinner.setAdapter(new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item, columnList));
-            }
+                }
         });
 
         searchBarEditText = findViewById(R.id.searchBarEditText);
         searchRecyclerView = findViewById(R.id.searchRecyclerView);
 
         searchButton = findViewById(R.id.searchButton);
-        searchButton.setOnClickListener(view -> search());
+        searchButton.setOnClickListener(view -> {
+            hideKeyBoard();
+            search();
+        });
         resetButton = findViewById(R.id.resetDataButton);
         resetButton.setOnClickListener(view -> resetDatabase());
         addButton = findViewById(R.id.addToDatabaseButton);
         addButton.setOnClickListener(view -> addToDatabase());
 
 
+    }
+
+    private void hideKeyBoard() {
+        View view1 = this.getCurrentFocus();
+        if(view1 != null){
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view1.getWindowToken(), 0);
+        }
     }
 
 
@@ -132,6 +131,7 @@ public class DatabaseActivity extends AppCompatActivity{
                 break;
             case Source:
                 databaseObjects = sourceDaoHelper.search(SourceDaoHelper.Columns.valueOf(searchColumn), searchText);
+                break;
         }
         DatabaseRecycleViewAdapter adapter = new DatabaseRecycleViewAdapter(this);
         adapter.setObjects(databaseObjects);
@@ -141,7 +141,7 @@ public class DatabaseActivity extends AppCompatActivity{
 
 
     private void addToDatabase(){
-        DatabaseInputDialog dialog = new DatabaseInputDialog(getApplicationContext(), null, (AppDatabase.Table) databaseSpinner.getSelectedItem());
+        DatabaseInputDialog dialog = new DatabaseInputDialog(this, null, (AppDatabase.Table) databaseSpinner.getSelectedItem());
         dialog.show();
     }
 
@@ -204,8 +204,12 @@ public class DatabaseActivity extends AppCompatActivity{
                     }
 
                     newVocab.addSources(dbVocab.getSources());
+                    dao.update(newVocab);
+                } else if(newVocab.getEnglish().equals("") || newVocab.getKana().equals("")){
+                    throw new Exception("PK was empty");
+                } else {
+                    dao.insert(newVocab);
                 }
-                dao.insert(newVocab);
             }
         } catch(Exception e){
             Toast.makeText(this, "Error loading "+ name +" Vocabulary", Toast.LENGTH_SHORT).show();
@@ -246,6 +250,7 @@ public class DatabaseActivity extends AppCompatActivity{
                                     return new KanjiWriting(kanji,japanese_reading,phonetic_reading,strokes, meaning, SourceDaoHelper.toSourceSting(source, section));
                                 }).collect(Collectors.toList());
                 for ( int i =0; i< kanjiWritingsList.size(); i++){
+
                     KanjiWriting newKanjiWriting = kanjiWritingsList.get(i);
                     KanjiWriting dbKanjiWriting = dao.getKanjiWriting(newKanjiWriting.getKanji());
                     if(dbKanjiWriting !=null){
@@ -275,8 +280,11 @@ public class DatabaseActivity extends AppCompatActivity{
                         }
 
                         newKanjiWriting.addSources(dbKanjiWriting.getSources());
+                        dao.update(newKanjiWriting);
+                    } else {
+                        dao.insert(newKanjiWriting);
                     }
-                    dao.insert(kanjiWritingsList.get(i));
+
                 }
             } catch(Exception e){
                 Toast.makeText(this, "Error loading "+ name +" KanjiWriting", Toast.LENGTH_SHORT).show();

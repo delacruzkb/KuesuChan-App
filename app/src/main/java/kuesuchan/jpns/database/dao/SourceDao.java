@@ -8,30 +8,32 @@ import androidx.room.Query;
 import androidx.room.Update;
 
 import java.util.List;
-
-import io.reactivex.Completable;
 import io.reactivex.Single;
 import kuesuchan.jpns.database.entity.Source;
+import kuesuchan.jpns.database.tuple.SourceTuple;
 
 @Dao
 public interface SourceDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    Completable insert(Source... source);
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    Single<Long> insert(Source source);
 
     @Delete
-    Completable delete(Source... source);
+    Single<Integer> delete(Source source);
 
     @Update
-    Completable update(Source source);
+    Single<Integer> update(Source source);
 
-    @Query("SELECT * from SOURCE where UPPER(source) LIKE UPPER(:source)")
-    Single<Source> getSource(String source);
+    @Query("SELECT * from SOURCE where UPPER(name) LIKE UPPER(:name) and section = :section")
+    Single<Source> getSource(String name, int section);
 
-    @Query("SELECT * from SOURCE where UPPER(:column) LIKE '%' + UPPER(:input) + '%'")
-    Single<List<Source>> search(String column, String input);
+    @Query("SELECT name,section from SOURCE where source_ids LIKE '%' + source_ids + '%'")
+    Single<List<SourceTuple>> getSourcesBySourceId(String source_id);
 
-    @Query("SELECT * from SOURCE")
-    Single<List<Source>> getSources();
+    @Query("SELECT name from SOURCE group by name")
+    Single<List<String>> getSourceNames();
+
+    @Query("SELECT section from SOURCE where name LIKE :name")
+    Single<List<Integer>> getSourceSections( String name);
 
 }

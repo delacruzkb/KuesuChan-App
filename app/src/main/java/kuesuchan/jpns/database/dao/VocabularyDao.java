@@ -5,33 +5,36 @@ import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.RawQuery;
 import androidx.room.Update;
+import androidx.sqlite.db.SupportSQLiteQuery;
 
 import java.util.List;
+import java.util.Set;
 
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import kuesuchan.jpns.database.entity.Vocabulary;
-import kuesuchan.jpns.database.dao.tuple.FlashCardTuple;
 
 @Dao
 public interface VocabularyDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    Completable insert(Vocabulary... vocabularies);
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    Single<Long> insert(Vocabulary vocabularies);
 
     @Delete
-    Completable delete(Vocabulary... vocabulary);
+    Single<Integer> delete(Vocabulary vocabulary);
 
     @Update
-    Completable update(Vocabulary vocabulary);
+    Single<Integer> update(Vocabulary vocabulary);
 
     @Query("SELECT * FROM VOCABULARY where UPPER(english)=UPPER(:english) and UPPER(kana)=UPPER(:kana)")
     Single<Vocabulary> getVocabulary(String english, String kana);
 
-    @Query("SELECT * from Vocabulary where UPPER(:column) LIKE '%' + UPPER(:input) + '%'")
-    Single<List<Vocabulary>> search(String column, String input);
+    @Query("SELECT * FROM VOCABULARY v, SOURCE s WHERE s.name LIKE :sourceName and section in (:sectionList) and s.source_ids  LIKE '%' + v.source_id +'%' limit :amount")
+    Single<List<Vocabulary>> getBySection(String sourceName, Set<Integer> sectionList, int amount);
 
-    @Query("SELECT english, kana, kanji, help_text FROM Vocabulary WHERE :sourceCondition limit :amount")
-    Single<List<FlashCardTuple>> getFlashCards(int amount, String sourceCondition);
+    @RawQuery
+    Single<List<Vocabulary>> rawQuery(SupportSQLiteQuery query);
+
 }

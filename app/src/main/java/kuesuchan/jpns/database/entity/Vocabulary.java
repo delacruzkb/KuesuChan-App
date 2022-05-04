@@ -2,17 +2,8 @@ package kuesuchan.jpns.database.entity;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
-import androidx.room.Ignore;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import kuesuchan.jpns.database.Converters;
+import kuesuchan.jpns.util.KuesuChanUtil;
 
 @Entity(primaryKeys = {"english","kana"})
 public class Vocabulary {
@@ -30,24 +21,14 @@ public class Vocabulary {
     private String help_text;
 
     @NonNull
-    private Set<String> sources;
+    private String source_id;
 
-    public Vocabulary(@NonNull String english, @NonNull String kana, @NonNull String kanji, @NonNull String help_text, @NonNull String source) {
-        this.english = english;
-        this.kana = kana;
-        this.kanji = kanji;
-        this.help_text = help_text;
-        sources = new HashSet<>();
-        sources.add(source);
-
-    }
-
-    public Vocabulary(@NonNull String english, @NonNull String kana, @NonNull String kanji, @NonNull String help_text, @NonNull Set<String> sources) {
-        this.english = english;
-        this.kana = kana;
-        this.kanji = kanji;
-        this.help_text = help_text;
-        this.sources = sources;
+    public Vocabulary(@NonNull String english, @NonNull String kana, @NonNull String kanji, @NonNull String help_text) {
+        this.english = english.trim();
+        this.kana = kana.trim();
+        this.kanji = kanji.trim();
+        this.help_text = help_text.trim();
+        this.source_id = this.english + KuesuChanUtil.VOCABULARY_ID_DELIM + this.kana;
     }
 
     @Override
@@ -55,8 +36,7 @@ public class Vocabulary {
         return "English: '" + english + "'"+
                 "\nKana: '" + kana + "'"+
                 "\nKanji: '" + kanji + "'"+
-                "\nHelp_text: '" + help_text + "'"+
-                "\nSources: " + sources;
+                "\nHelp_text: '" + help_text + "'";
     }
 
     @Override
@@ -73,7 +53,8 @@ public class Vocabulary {
     }
 
     public void setEnglish(@NonNull String english) {
-        this.english = english;
+        this.english = english.trim();
+        this.source_id = this.english + KuesuChanUtil.VOCABULARY_ID_DELIM + this.kana;
     }
 
     @NonNull
@@ -82,7 +63,8 @@ public class Vocabulary {
     }
 
     public void setKana(@NonNull String kana) {
-        this.kana = kana;
+        this.kana = kana.trim();
+        this.source_id = this.english + KuesuChanUtil.VOCABULARY_ID_DELIM + this.kana;
     }
 
     @NonNull
@@ -91,7 +73,7 @@ public class Vocabulary {
     }
 
     public void setKanji(@NonNull String kanji) {
-        this.kanji = kanji;
+        this.kanji = kanji.trim();
     }
 
     @NonNull
@@ -100,31 +82,11 @@ public class Vocabulary {
     }
 
     public void setHelp_text(@NonNull String help_text) {
-        this.help_text = help_text;
+        this.help_text = help_text.trim();
     }
 
     @NonNull
-    public Set<String> getSources() {
-        return sources;
-    }
-
-    public String getSourceString(){
-        return Converters.stringSetToString(sources);
-    }
-
-    public void setSources(@NonNull Set<String> sources) {
-        this.sources = sources;
-    }
-
-    public void setSourceFromString(@NonNull String sources) {
-        this.sources = Converters.fromStringToStringSet(sources);
-    }
-
-    public void addSource(String source){
-        sources.add(source);
-    }
-
-    public void addSources(Set<String> sources){
-        this.sources.addAll(sources);
+    public String getSource_id() {
+        return source_id;
     }
 }

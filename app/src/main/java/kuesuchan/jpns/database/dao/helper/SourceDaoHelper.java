@@ -19,44 +19,37 @@ import io.reactivex.schedulers.Schedulers;
 import kuesuchan.jpns.database.dao.SourceDao;
 import kuesuchan.jpns.database.entity.Source;
 
-public class SourceDaoHelper {
+public class SourceDaoHelper implements DaoHelper{
 
     public static enum Columns{
         source,
         sectionCount
     }
 
-
-    private final Scheduler DEFAULT_SCHEDULER = Schedulers.io();
     private SourceDao sourceDao;
 
     public SourceDaoHelper(SourceDao sourceDao) {
         this.sourceDao = sourceDao;
     }
 
-    public void insert(Source... source){
-        sourceDao.insert(source).subscribeOn(DEFAULT_SCHEDULER).subscribe();
+    @Override
+    public long insert(Object object) {
+        return sourceDao.insert((Source) object).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
     }
 
-    public void delete(Source... source){
-        sourceDao.delete(source).subscribeOn(DEFAULT_SCHEDULER).subscribe();
+    @Override
+    public int delete(Object object) {
+        return sourceDao.delete((Source) object).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
     }
 
-    public void update(Source source){
-        sourceDao.update(source).subscribeOn(DEFAULT_SCHEDULER).subscribe();
+    @Override
+    public int update(Object object) {
+        return sourceDao.update((Source) object).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
     }
 
-    public Source getSource(String source){
+    public Source getSource(String name, int section){
         try{
-            return sourceDao.getSource(source).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
-        } catch (EmptyResultSetException e) {
-            return null;
-        }
-    }
-
-    public List<Source> search(Columns column, String input){
-        try{
-            return sourceDao.search(column.name(), input).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+            return sourceDao.getSource(name,section).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
         } catch (EmptyResultSetException e) {
             return null;
         }

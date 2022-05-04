@@ -1,68 +1,78 @@
 package kuesuchan.jpns.database.dao.helper;
 
 import androidx.room.EmptyResultSetException;
+import androidx.sqlite.db.SimpleSQLiteQuery;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
 import kuesuchan.jpns.database.dao.KanjiWritingDao;
 import kuesuchan.jpns.database.entity.KanjiWriting;
-import kuesuchan.jpns.database.dao.tuple.KanjiWritingTuple;
 
-public class KanjiWritingDaoHelper{
+public class KanjiWritingDaoHelper implements DaoHelper{
 
-    public enum Columns{
-        kanji,japanese_reading,phonetic_reading,strokes,meaning,source;
+    public static enum Columns{
+        kanji,
+        japanese_reading,
+        phonetic_reading,
+        strokes,
+        meaning,
+        sources;
     }
 
-    private KanjiWritingDao dao;
+    private KanjiWritingDao kanjiWritingDao;
 
     public KanjiWritingDaoHelper(KanjiWritingDao kanjiWritingDao) {
-        this.dao = kanjiWritingDao;
+        this.kanjiWritingDao = kanjiWritingDao;
     }
 
-    public void insert(KanjiWriting kanjiWriting) {
-        dao.insert(kanjiWriting).subscribeOn(Schedulers.io()).doOnError(error -> {
-            System.out.println(error.getMessage());
-        }).subscribe();
+    @Override
+    public long insert(Object object) {
+        return kanjiWritingDao.insert((KanjiWriting) object).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
     }
 
-    public void delete(KanjiWriting kanjiWriting) {
-        dao.delete(kanjiWriting).subscribeOn(Schedulers.io()).subscribe();
+    @Override
+    public int delete(Object object) {
+        return kanjiWritingDao.delete((KanjiWriting) object).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
     }
 
-    public void update(KanjiWriting kanjiWriting) {
-        dao.update(kanjiWriting).subscribeOn(Schedulers.io()).subscribe();
+    @Override
+    public int update(Object object) {
+        return kanjiWritingDao.update((KanjiWriting) object).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
     }
 
     public KanjiWriting getKanjiWriting(String kanji) {
         try{
-            return dao.getKanjiWriting(kanji).subscribeOn(Schedulers.io()).blockingGet();
-        } catch (EmptyResultSetException e){
-            return null;
-        }
-    }
-
-    public List<KanjiWritingTuple> getKanjiWritingTuples(int amount, Set<String> sources) {
-        StringBuilder sourceCondition = new StringBuilder();
-        sources.forEach(source->{
-            sourceCondition.append(VocabularyDaoHelper.Columns.source.name().toUpperCase() + "LIKE '%' + " + source.toUpperCase() + " + '%'" );
-            sourceCondition.append(" or ");
-        });
-        sourceCondition.delete(sourceCondition.lastIndexOf("or"), sourceCondition.length()-1);
-        try{
-            return dao.getKanjiWritingTuples(amount, sourceCondition.toString()).subscribeOn(Schedulers.io()).blockingGet();
+            return kanjiWritingDao.getKanjiWriting(kanji).subscribeOn(Schedulers.io()).blockingGet();
         } catch (EmptyResultSetException e){
             return null;
         }
     }
 
     public List<KanjiWriting> search(Columns columns, String input) {
+        String sql = "SELECT * FROM KanjiWriting WHERE UPPER(" + columns.name() + ") LIKE '%" + input.toUpperCase() + "%'";
         try{
-            return dao.search(columns.name(), input).subscribeOn(Schedulers.io()).blockingGet();
+            return kanjiWritingDao.rawQuery(new SimpleSQLiteQuery(sql)).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        } catch (EmptyResultSetException e){
+            return null;
+        }
+    }
+
+    public List<KanjiWriting> getBySource(int amount, Set<String> sources) {
+        StringBuilder sqlString = new StringBuilder("SELECT * FROM KanjiWriting WHERE ");
+        sources.forEach(source->{
+            sqlString.append("UPPER(" + Columns.sources.name() + ") LIKE '%" + source.toUpperCase() + "%' "  );
+            sqlString.append(" or ");
+        });
+        sqlString.delete(sqlString.lastIndexOf("or"), sqlString.length()-1);
+        sqlString.append(" limit " + amount);
+        try{
+            SimpleSQLiteQuery query = new SimpleSQLiteQuery(sqlString.toString());
+            return kanjiWritingDao.rawQuery(query).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
         } catch (EmptyResultSetException e){
             return null;
         }
