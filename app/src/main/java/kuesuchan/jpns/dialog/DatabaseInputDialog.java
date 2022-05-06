@@ -1,5 +1,6 @@
 package kuesuchan.jpns.dialog;
 
+import android.animation.TypeConverter;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -12,14 +13,19 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import kuesuchan.jpns.R;
 import kuesuchan.jpns.database.AppDatabase;
 import kuesuchan.jpns.database.Converters;
-import kuesuchan.jpns.database.dao.helper.DaoHelper;
 import kuesuchan.jpns.database.dao.helper.KanjiWritingDaoHelper;
+import kuesuchan.jpns.database.dao.helper.SourceDaoHelper;
 import kuesuchan.jpns.database.dao.helper.VocabularyDaoHelper;
 import kuesuchan.jpns.database.entity.KanjiWriting;
 import kuesuchan.jpns.database.entity.Vocabulary;
+import kuesuchan.jpns.database.tuple.SourceTuple;
+import kuesuchan.jpns.util.KuesuChanUtil;
 
 public class DatabaseInputDialog {
 
@@ -30,16 +36,21 @@ public class DatabaseInputDialog {
 
     private AlertDialog dialog;
 
-    private AppDatabase.Table table;
+    private AppDatabase.SearchableTable table;
 
     private Context context;
 
     private Object selectedObject;
 
-    public DatabaseInputDialog(@NonNull Context context, Object selectedObject, @NonNull AppDatabase.Table table) {
+    private SourceDaoHelper sourceDaoHelper;
+
+    public DatabaseInputDialog(@NonNull Context context, Object selectedObject, @NonNull AppDatabase.SearchableTable table) {
         this.table = table;
         this.context = context;
         this.selectedObject = selectedObject;
+
+        AppDatabase db = AppDatabase.getInstance(context);
+        sourceDaoHelper = db.getSourceDaoHelper();
 
         View dialogFormView = LayoutInflater.from(context).inflate(R.layout.dialog_database_row_edit, null);
         initializeView(dialogFormView);
@@ -116,11 +127,11 @@ public class DatabaseInputDialog {
 
     @SuppressLint("SetTextI18n")
     private void loadVocabularyData(Vocabulary vocabulary) {
-        columnLabel1.setText(VocabularyDaoHelper.Columns.english.name() + "*");
-        columnLabel2.setText(VocabularyDaoHelper.Columns.kana.name() + "*");
-        columnLabel3.setText(VocabularyDaoHelper.Columns.kanji.name());
-        columnLabel4.setText(VocabularyDaoHelper.Columns.help_text.name());
-        columnLabel5.setText(VocabularyDaoHelper.Columns.sources.name() + "(Source.Section, Source.Section, ...)");
+        columnLabel1.setText(Vocabulary.Columns.english.name() + "*");
+        columnLabel2.setText(Vocabulary.Columns.kana.name() + "*");
+        columnLabel3.setText(Vocabulary.Columns.kanji.name());
+        columnLabel4.setText(Vocabulary.Columns.help_text.name());
+        columnLabel5.setText("Sources (Source"+ KuesuChanUtil.SOURCE_TUPLE_DELIM +"Section)*");
         columnLabel6.setVisibility(View.GONE);
         columnEditText6.setVisibility(View.GONE);
         columnLabel7.setVisibility(View.GONE);
@@ -131,19 +142,19 @@ public class DatabaseInputDialog {
             columnEditText2.setText(vocabulary.getKana());
             columnEditText3.setText(vocabulary.getKanji());
             columnEditText4.setText(vocabulary.getHelp_text());
-            columnEditText5.setText(vocabulary.getSourceString());
+            columnEditText5.setText(Converters.sourceTupleSetToString(new HashSet<>(sourceDaoHelper.getSourceTuplesBySourceId(vocabulary.getSource_id()))));
         }
     }
 
     @SuppressLint("SetTextI18n")
     private void loadKanjiWritingData(KanjiWriting kanjiWriting) {
-        columnLabel1.setText(KanjiWritingDaoHelper.Columns.kanji.name() + "*");
-        columnLabel2.setText(KanjiWritingDaoHelper.Columns.japanese_reading.name());
-        columnLabel3.setText(KanjiWritingDaoHelper.Columns.phonetic_reading.name());
-        columnLabel4.setText(KanjiWritingDaoHelper.Columns.strokes.name());
+        columnLabel1.setText(KanjiWriting.Columns.kanji.name() + "*");
+        columnLabel2.setText(KanjiWriting.Columns.japanese_reading.name());
+        columnLabel3.setText(KanjiWriting.Columns.phonetic_reading.name());
+        columnLabel4.setText(KanjiWriting.Columns.strokes.name());
         columnEditText4.setInputType(InputType.TYPE_CLASS_NUMBER);
-        columnLabel5.setText(KanjiWritingDaoHelper.Columns.meaning.name());
-        columnLabel6.setText(KanjiWritingDaoHelper.Columns.sources.name() + "(Source.Section, Source.Section, ...)");
+        columnLabel5.setText(KanjiWriting.Columns.meaning.name());
+        columnLabel6.setText("Sources (Source"+ KuesuChanUtil.SOURCE_TUPLE_DELIM +"Section)*");
         columnLabel7.setVisibility(View.GONE);
         columnEditText7.setVisibility(View.GONE);
 
@@ -153,7 +164,7 @@ public class DatabaseInputDialog {
             columnEditText3.setText(kanjiWriting.getPhonetic_reading());
             columnEditText4.setText(Integer.toString(kanjiWriting.getStrokes()));
             columnEditText5.setText(kanjiWriting.getMeaning());
-            columnEditText6.setText(kanjiWriting.getSourceString());
+            columnEditText6.setText(Converters.sourceTupleSetToString(new HashSet<>(sourceDaoHelper.getSourceTuplesBySourceId(kanjiWriting.getKanji()))));
         }
 
     }
@@ -171,47 +182,58 @@ public class DatabaseInputDialog {
     private void insert() {
         switch (table) {
             case Vocabulary:
-                VocabularyDaoHelper vocabularyDaoHelper = AppDatabase.getInstance(context).getVocabularyDaoHelper();
-                Vocabulary originalVocabulary = (Vocabulary) selectedObject;
-                Vocabulary newItemVocabulary = getVocabularyInput();
-                Vocabulary conflictItemVocabulary = vocabularyDaoHelper.getVocabulary(getVocabularyInput().getEnglish(), getVocabularyInput().getKana());
-                if (insertElseConflict(vocabularyDaoHelper, originalVocabulary, newItemVocabulary, conflictItemVocabulary)) {
-                    handleVocabularyConflict(vocabularyDaoHelper, originalVocabulary, newItemVocabulary, conflictItemVocabulary);
-                }
+                insertVocabulary();
                 break;
             case Kanji_Writing:
-                KanjiWritingDaoHelper kanjiWritingDaoHelper = AppDatabase.getInstance(context).getKanjiWritingDaoHelper();
-                KanjiWriting originalKanjiWriting = (KanjiWriting) selectedObject;
-                KanjiWriting newItemKanjiWriting = getKanjiWritingInput();
-                KanjiWriting conflictItemKanjiWriting = kanjiWritingDaoHelper.getKanjiWriting(newItemKanjiWriting.getKanji());
-                if (insertElseConflict(kanjiWritingDaoHelper, originalKanjiWriting, newItemKanjiWriting, conflictItemKanjiWriting)) {
-                    handleKanjiWritingConflict(kanjiWritingDaoHelper, originalKanjiWriting, newItemKanjiWriting, conflictItemKanjiWriting);
-                }
+                insertKanjiWriting();
                 break;
         }
     }
 
-    private boolean insertElseConflict(DaoHelper daoHelper, Object original, Object newItem, Object conflictItem) {
-        boolean conflict = false;
+    private void insertVocabulary(){
+        VocabularyDaoHelper vocabularyDaoHelper = AppDatabase.getInstance(context).getVocabularyDaoHelper();
+        Vocabulary original = (Vocabulary) selectedObject;
+        Vocabulary newItem = getVocabularyInput();
+        Vocabulary conflictItem = vocabularyDaoHelper.getVocabulary(newItem.getEnglish(), newItem.getKana());
+        Set<SourceTuple> sourceTupleSet = getSourceInput(columnEditText5);
 
-        //TODO: test all of these
         if (original == null && conflictItem == null) { // insert with no conflicts
-            daoHelper.insert(newItem);
+            vocabularyDaoHelper.insert(newItem, sourceTupleSet);
         } else if (original == null && conflictItem != null) { // insert with conflicts
-            conflict = true;
+            handleVocabularyConflict(vocabularyDaoHelper, original, newItem, conflictItem, sourceTupleSet);
         } else if (original != null && original.equals(newItem)) { // update Non-PK
-            daoHelper.update(newItem);
+            vocabularyDaoHelper.update(newItem, sourceTupleSet);
         } else if (original != null && !original.equals(newItem) && !newItem.equals(conflictItem)) { // update PK with no conflict
-            daoHelper.delete(original);
-            daoHelper.insert(newItem);
+            vocabularyDaoHelper.delete(original);
+            vocabularyDaoHelper.insert(newItem, sourceTupleSet);
         } else if (original != null && !original.equals(newItem) && newItem.equals(conflictItem)) {  // update PK with conflicts
-            conflict = true;
+            handleVocabularyConflict(vocabularyDaoHelper, original, newItem, conflictItem, sourceTupleSet);
         }
-        return conflict;
+
     }
 
+    private void insertKanjiWriting(){
+        KanjiWritingDaoHelper kanjiWritingDaoHelper = AppDatabase.getInstance(context).getKanjiWritingDaoHelper();
+        KanjiWriting original= (KanjiWriting) selectedObject;
+        KanjiWriting newItem = getKanjiWritingInput();
+        KanjiWriting conflictItem = kanjiWritingDaoHelper.getKanjiWriting(newItem.getKanji());
+        Set<SourceTuple> sourceTupleSet = getSourceInput(columnEditText6);
 
-    private void handleVocabularyConflict(VocabularyDaoHelper vocabularyDaoHelper, Vocabulary original, Vocabulary newItem, Vocabulary conflictItem) {
+        if (original == null && conflictItem == null) { // insert with no conflicts
+            kanjiWritingDaoHelper.insert(newItem, sourceTupleSet);
+        } else if (original == null && conflictItem != null) { // insert with conflicts
+            handleKanjiWritingConflict(kanjiWritingDaoHelper, original, newItem, conflictItem, sourceTupleSet);
+        } else if (original != null && original.equals(newItem)) { // update Non-PK
+            kanjiWritingDaoHelper.update(newItem, sourceTupleSet);
+        } else if (original != null && !original.equals(newItem) && !newItem.equals(conflictItem)) { // update PK with no conflict
+            kanjiWritingDaoHelper.delete(original);
+            kanjiWritingDaoHelper.insert(newItem, sourceTupleSet);
+        } else if (original != null && !original.equals(newItem) && newItem.equals(conflictItem)) {  // update PK with conflicts
+            handleKanjiWritingConflict(kanjiWritingDaoHelper, original, newItem, conflictItem, sourceTupleSet);
+        }
+    }
+
+    private void handleVocabularyConflict(VocabularyDaoHelper vocabularyDaoHelper, Vocabulary original, Vocabulary newItem, Vocabulary conflictItem, Set<SourceTuple> newSourceTupleSet) {
         StringBuilder conflictStringBuilder = new StringBuilder();
         conflictStringBuilder.append("English : " + conflictItem.getEnglish())
                 .append("\nKana : " + conflictItem.getKana());
@@ -221,22 +243,24 @@ public class DatabaseInputDialog {
         if (!newItem.getHelp_text().equals(conflictItem.getHelp_text())) {
             conflictStringBuilder.append("\nHelp Text: " + conflictItem.getHelp_text() + " -> " + newItem.getHelp_text());
         }
-        //TODO: make sure this match works even when new item has out of order string
-        if (!newItem.getSources().containsAll(conflictItem.getSources())) {
-            conflictStringBuilder.append("\nSource: " + conflictItem.getSourceString() + " -> " + newItem.getSourceString());
+        String conflictSourceString = Converters.sourceTupleSetToString(new HashSet<>( sourceDaoHelper.getSourceTuplesBySourceId(conflictItem.getSource_id())));
+        String newSourceString = Converters.sourceTupleSetToString(newSourceTupleSet);
+        if (!newSourceString.equals(conflictSourceString)) {
+            conflictStringBuilder.append("\nSources: " + conflictSourceString + " -> " + newSourceString);
         }
+
         AlertDialog.Builder conflictAlertBuilder = new AlertDialog.Builder(context);
         conflictAlertBuilder.setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.cancel())
                 .setPositiveButton("Overwrite", ((dialogInterface, i) -> {
                     if (original != null) {
                         vocabularyDaoHelper.delete(original);
                     }
-                    vocabularyDaoHelper.insert(newItem);
+                    vocabularyDaoHelper.insert(newItem, newSourceTupleSet);
                 }));
         conflictAlertBuilder.show();
     }
 
-    private void handleKanjiWritingConflict(KanjiWritingDaoHelper kanjiWritingDaoHelper, KanjiWriting original, KanjiWriting newItem, KanjiWriting conflictItem) {
+    private void handleKanjiWritingConflict(KanjiWritingDaoHelper kanjiWritingDaoHelper, KanjiWriting original, KanjiWriting newItem, KanjiWriting conflictItem, Set<SourceTuple> newSourceTupleSet) {
         StringBuilder conflictStringBuilder = new StringBuilder();
         conflictStringBuilder.append("Kanji : " + conflictItem.getKanji());
         if (!newItem.getJapanese_reading().equals(newItem.getJapanese_reading())) {
@@ -251,9 +275,10 @@ public class DatabaseInputDialog {
         if (!newItem.getMeaning().equals(conflictItem.getMeaning())) {
             conflictStringBuilder.append("\nMeaning: " + conflictItem.getMeaning() + " -> " + newItem.getMeaning());
         }
-        //TODO: make sure this match works even when new item has out of order string
-        if (!newItem.getSourceString().equals(conflictItem.getSourceString())) {
-            conflictStringBuilder.append("\nSource: " + conflictItem.getSourceString() + " -> " + newItem.getSourceString());
+        String conflictSourceString = Converters.sourceTupleSetToString(new HashSet<>( sourceDaoHelper.getSourceTuplesBySourceId(conflictItem.getKanji())));
+        String newSourceString = Converters.sourceTupleSetToString(newSourceTupleSet);
+        if (!newSourceString.equals(conflictSourceString)) {
+            conflictStringBuilder.append("\nSources: " + conflictSourceString + " -> " + newSourceString);
         }
         AlertDialog.Builder conflictAlertBuilder = new AlertDialog.Builder(context);
         conflictAlertBuilder.setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.cancel())
@@ -261,7 +286,7 @@ public class DatabaseInputDialog {
                     if (original != null) {
                         kanjiWritingDaoHelper.delete(original);
                     }
-                    kanjiWritingDaoHelper.insert(newItem);
+                    kanjiWritingDaoHelper.insert(newItem, newSourceTupleSet);
                 }));
     }
 
@@ -276,8 +301,7 @@ public class DatabaseInputDialog {
         return new Vocabulary(english,
                 kana,
                 columnEditText3.getText().toString(),
-                columnEditText4.getText().toString(),
-                Converters.fromStringToStringSet(columnEditText5.getText().toString()));
+                columnEditText4.getText().toString());
     }
 
     private KanjiWriting getKanjiWritingInput() {
@@ -292,7 +316,11 @@ public class DatabaseInputDialog {
                 columnEditText2.getText().toString(),
                 columnEditText3.getText().toString(),
                 Integer.parseInt(columnEditText4.getText().toString()),
-                columnEditText5.getText().toString(),
-                Converters.fromStringToStringSet(columnEditText6.getText().toString()));
+                columnEditText5.getText().toString());
+    }
+
+
+    private Set<SourceTuple> getSourceInput(EditText editText){
+        return Converters.fromStringToSourceTupleSet(editText.getText().toString());
     }
 }

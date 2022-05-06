@@ -148,19 +148,11 @@ public class SetupActivity extends AppCompatActivity{
         sectionCheckBoxAll.setOnCheckedChangeListener( (compoundButton, checked) -> sectionCheckboxList.stream().forEach(checkbox -> checkbox.setChecked(false)));
 
         sourceSpinner = findViewById(R.id.sourceSpinner);
-        sourceSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, sourceDaoHelper.getSourceList()));
+        sourceSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, sourceDaoHelper.getSourceNames()));
         sourceSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int index, long l) {
-                Source source = sourceDaoHelper.getSource(adapterView.getItemAtPosition(index).toString());
-                for( int i=0; i<sectionCheckboxList.size();i++){
-                    if(i+1 <=source.getSectionCount()){
-                        sectionCheckboxList.get(i).setVisibility(View.VISIBLE);
-                    }
-                    else{
-                        sectionCheckboxList.get(i).setVisibility(View.GONE);
-                    }
-                }
+                //TODO: Populate view with Sections
             }
 
             @Override

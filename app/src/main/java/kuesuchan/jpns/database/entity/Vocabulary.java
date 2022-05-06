@@ -8,6 +8,13 @@ import kuesuchan.jpns.util.KuesuChanUtil;
 @Entity(primaryKeys = {"english","kana"})
 public class Vocabulary {
 
+    public static enum Columns{
+        english,
+        kana,
+        kanji,
+        help_text
+    }
+
     @NonNull
     private String english;
 
@@ -28,7 +35,7 @@ public class Vocabulary {
         this.kana = kana.trim();
         this.kanji = kanji.trim();
         this.help_text = help_text.trim();
-        this.source_id = this.english + KuesuChanUtil.VOCABULARY_ID_DELIM + this.kana;
+        this.source_id = this.english + KuesuChanUtil.SOURCE_ID_DELIM + this.kana;
     }
 
     @Override
@@ -54,7 +61,7 @@ public class Vocabulary {
 
     public void setEnglish(@NonNull String english) {
         this.english = english.trim();
-        this.source_id = this.english + KuesuChanUtil.VOCABULARY_ID_DELIM + this.kana;
+        this.source_id = this.english + KuesuChanUtil.SOURCE_ID_DELIM + this.kana;
     }
 
     @NonNull
@@ -64,7 +71,7 @@ public class Vocabulary {
 
     public void setKana(@NonNull String kana) {
         this.kana = kana.trim();
-        this.source_id = this.english + KuesuChanUtil.VOCABULARY_ID_DELIM + this.kana;
+        this.source_id = this.english + KuesuChanUtil.SOURCE_ID_DELIM + this.kana;
     }
 
     @NonNull
@@ -88,5 +95,9 @@ public class Vocabulary {
     @NonNull
     public String getSource_id() {
         return source_id;
+    }
+
+    public void setSource_id(@NonNull String source_id) {
+        this.source_id = source_id;
     }
 }

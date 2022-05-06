@@ -7,6 +7,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import kuesuchan.jpns.database.entity.Source;
+import kuesuchan.jpns.database.tuple.SourceTuple;
+import kuesuchan.jpns.util.KuesuChanUtil;
+
 public class Converters {
 
     @TypeConverter
@@ -40,4 +44,34 @@ public class Converters {
         rtnval.deleteCharAt(rtnval.lastIndexOf(","));
         return rtnval.toString();
     }
+
+    @TypeConverter
+    public static Source.TYPE fromStringToSourceType(String str) {
+        return Source.TYPE.valueOf(str);
+    }
+
+    @TypeConverter
+    public static String sourceTypeToString(Source.TYPE type) {
+        return type.name();
+    }
+
+    @TypeConverter
+    public static Set<SourceTuple> fromStringToSourceTupleSet(String strs) {
+        return Arrays.asList(strs.split(",")).stream().map(str ->{
+            String[] values = str.split(KuesuChanUtil.SOURCE_TUPLE_DELIM);
+            return new SourceTuple(values[0], Integer.parseInt(values[1]));
+        }).collect(Collectors.toSet());
+    }
+
+    @TypeConverter
+    public static String sourceTupleSetToString(Set<SourceTuple> sourceTuples) {
+        StringBuilder rtnval = new StringBuilder();
+        for ( SourceTuple sourceTuple : sourceTuples) {
+            rtnval.append(sourceTuple.toString());
+            rtnval.append(",");
+        }
+        rtnval.deleteCharAt(rtnval.lastIndexOf(","));
+        return rtnval.toString();
+    }
+
 }

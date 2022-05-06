@@ -67,20 +67,18 @@ public class DatabaseActivity extends AppCompatActivity{
     private void setupViews() {
         searchTypeSpinner = findViewById(R.id.searchTypeSpinner);
         databaseSpinner = findViewById(R.id.databaseSpinner);
-        databaseSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, Arrays.stream(AppDatabase.Table.values()).collect(Collectors.toList())));
+        databaseSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, Arrays.stream(AppDatabase.SearchableTable.values()).collect(Collectors.toList())));
         databaseSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 List<String> columnList = new ArrayList<>();
-                switch ((AppDatabase.Table) adapterView.getItemAtPosition(i)){
+                switch ((AppDatabase.SearchableTable) adapterView.getItemAtPosition(i)){
                     case Vocabulary:
                         columnList = VocabularyDaoHelper.getColumnList();
                         break;
                     case Kanji_Writing:
                         columnList = KanjiWritingDaoHelper.getColumnList();
                         break;
-                    case Source:
-                        columnList = SourceDaoHelper.getColumnList();
                     default:
                         break;
                 }
@@ -122,15 +120,12 @@ public class DatabaseActivity extends AppCompatActivity{
         String searchText = searchBarEditText.getText().toString();
         String searchColumn = searchTypeSpinner.getSelectedItem().toString();
         List<? extends  Object> databaseObjects = new ArrayList<>();
-        switch ((AppDatabase.Table) databaseSpinner.getSelectedItem()){
+        switch ((AppDatabase.SearchableTable) databaseSpinner.getSelectedItem()){
             case Vocabulary:
-                databaseObjects = vocabularyDaoHelper.search(VocabularyDaoHelper.Columns.valueOf(searchColumn), searchText);
+                databaseObjects = vocabularyDaoHelper.search(Vocabulary.Columns.valueOf(searchColumn), searchText);
                 break;
             case Kanji_Writing:
-                databaseObjects = kanjiWritingDaoHelper.search(KanjiWritingDaoHelper.Columns.valueOf(searchColumn), searchText);
-                break;
-            case Source:
-                databaseObjects = sourceDaoHelper.search(SourceDaoHelper.Columns.valueOf(searchColumn), searchText);
+                databaseObjects = kanjiWritingDaoHelper.search(KanjiWriting.Columns.valueOf(searchColumn), searchText);
                 break;
         }
         DatabaseRecycleViewAdapter adapter = new DatabaseRecycleViewAdapter(this);
@@ -141,7 +136,7 @@ public class DatabaseActivity extends AppCompatActivity{
 
 
     private void addToDatabase(){
-        DatabaseInputDialog dialog = new DatabaseInputDialog(this, null, (AppDatabase.Table) databaseSpinner.getSelectedItem());
+        DatabaseInputDialog dialog = new DatabaseInputDialog(this, null, (AppDatabase.SearchableTable) databaseSpinner.getSelectedItem());
         dialog.show();
     }
 
@@ -169,26 +164,17 @@ public class DatabaseActivity extends AppCompatActivity{
                     new CSVReaderBuilder(new InputStreamReader(getApplicationContext().getAssets().open(fileName)))
                             .withSkipLines(1) // skip header
                             .build();
-            List<Vocabulary> vocabularyList =
-                    reader
-                            .readAll()
-                            .stream()
-                            .map(data ->{
-                                String english = data[0];
-                                String kana = data[1];
-                                String kanji = data[2];
-                                String help_text = data[3];
-                                String source = data[4];
-                                int section = Integer.parseInt(data[5]);
-                                Source dbSource = sourceDaoHelper.getSource(data[4]);
-                                if(dbSource != null && dbSource.getSectionCount() < section){
-                                    dbSource.setSectionCount(section);
-                                    sourceDaoHelper.update(dbSource);
-                                }
-                                return new Vocabulary(english, kana, kanji, help_text, SourceDaoHelper.toSourceSting(source,section));
-                            }).collect(Collectors.toList());
-            for ( int i =0; i< vocabularyList.size(); i++){
-                Vocabulary newVocab = vocabularyList.get(i);
+            List<String[]> lines = reader.readAll();
+            for ( String[] data : lines){
+                //Process Line
+                String english = data[0];
+                String kana = data[1];
+                String kanji = data[2];
+                String help_text = data[3];
+                String source = data[4];
+                int section = Integer.parseInt(data[5]);
+                Vocabulary newVocab = new Vocabulary(english, kana, kanji, help_text);
+                //Check for Database Conflict
                 Vocabulary dbVocab = dao.getVocabulary(newVocab.getEnglish(), newVocab.getKana());
                 if(dbVocab !=null){
                     if(newVocab.getKanji().equals("") || newVocab.getKanji().equalsIgnoreCase(dbVocab.getKanji())) {
@@ -203,14 +189,19 @@ public class DatabaseActivity extends AppCompatActivity{
                         throw new Exception("Help_Text Conflict for " + newVocab.toString() + " \n and " +dbVocab.toString());
                     }
 
-                    newVocab.addSources(dbVocab.getSources());
+                    Source dbSource = sourceDaoHelper.getSource(source, section);
+
+                    dbSource.addSource_id(newVocab.getSource_id());
+                    sourceDaoHelper.update(dbSource);
                     dao.update(newVocab);
                 } else if(newVocab.getEnglish().equals("") || newVocab.getKana().equals("")){
                     throw new Exception("PK was empty");
                 } else {
-                    dao.insert(newVocab);
+                    dao.insert(newVocab, source,section);
                 }
+
             }
+
         } catch(Exception e){
             Toast.makeText(this, "Error loading "+ name +" Vocabulary", Toast.LENGTH_SHORT).show();
             System.out.println("ERROR ERROR " + e.getMessage());
@@ -225,33 +216,18 @@ public class DatabaseActivity extends AppCompatActivity{
                         new CSVReaderBuilder(new InputStreamReader(getApplicationContext().getAssets().open(fileName)))
                                 .withSkipLines(1) // skip header
                                 .build();
-                List<KanjiWriting> kanjiWritingsList =
-                        reader
-                                .readAll()
-                                .stream()
-                                .map(data -> {
-                                    String kanji = data[0];
-
-                                    String japanese_reading = data[1];
-
-                                    String phonetic_reading = data[2];
-
-                                    int strokes = Integer.parseInt(data[3]);
-
-                                    String meaning = data[4];
-
-                                    String source = data[5];
-                                    int section = Integer.parseInt(data[6]);
-                                    Source dbSource = sourceDaoHelper.getSource(source);
-                                    if (dbSource != null && dbSource.getSectionCount() < section) {
-                                        dbSource.setSectionCount(section);
-                                        sourceDaoHelper.update(dbSource);
-                                    }
-                                    return new KanjiWriting(kanji,japanese_reading,phonetic_reading,strokes, meaning, SourceDaoHelper.toSourceSting(source, section));
-                                }).collect(Collectors.toList());
-                for ( int i =0; i< kanjiWritingsList.size(); i++){
-
-                    KanjiWriting newKanjiWriting = kanjiWritingsList.get(i);
+                List<String[]> lines = reader.readAll();
+                for( String[] data : lines){
+                    //Process Line
+                    String kanji = data[0];
+                    String japanese_reading = data[1];
+                    String phonetic_reading = data[2];
+                    int strokes = Integer.parseInt(data[3]);
+                    String meaning = data[4];
+                    String source = data[5];
+                    int section = Integer.parseInt(data[6]);
+                    KanjiWriting newKanjiWriting = new KanjiWriting(kanji,japanese_reading,phonetic_reading,strokes, meaning);
+                    //Check for Database Conflict
                     KanjiWriting dbKanjiWriting = dao.getKanjiWriting(newKanjiWriting.getKanji());
                     if(dbKanjiWriting !=null){
                         if(newKanjiWriting.getJapanese_reading().equals("") || newKanjiWriting.getJapanese_reading().equalsIgnoreCase(dbKanjiWriting.getJapanese_reading())) {
@@ -279,11 +255,15 @@ public class DatabaseActivity extends AppCompatActivity{
                             throw new Exception("Meaning Conflict for " + newKanjiWriting.toString() + " \n and " +dbKanjiWriting.toString());
                         }
 
-                        newKanjiWriting.addSources(dbKanjiWriting.getSources());
+                        Source dbSource = sourceDaoHelper.getSource(source, section);
+
+                        dbSource.addSource_id(newKanjiWriting.getKanji());
+                        sourceDaoHelper.update(dbSource);
                         dao.update(newKanjiWriting);
                     } else {
-                        dao.insert(newKanjiWriting);
+                        dao.insert(newKanjiWriting, source,section);
                     }
+
 
                 }
             } catch(Exception e){

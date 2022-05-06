@@ -9,7 +9,9 @@ import androidx.room.Update;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.reactivex.Completable;
@@ -18,33 +20,54 @@ import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import kuesuchan.jpns.database.dao.SourceDao;
 import kuesuchan.jpns.database.entity.Source;
+import kuesuchan.jpns.database.tuple.SourceTuple;
 
-public class SourceDaoHelper implements DaoHelper{
+public class SourceDaoHelper {
 
-    public static enum Columns{
-        source,
-        sectionCount
-    }
-
+    private final Scheduler DEFAULT_SCHEDULER = Schedulers.io();
     private SourceDao sourceDao;
 
     public SourceDaoHelper(SourceDao sourceDao) {
         this.sourceDao = sourceDao;
     }
 
-    @Override
-    public long insert(Object object) {
-        return sourceDao.insert((Source) object).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+    public long insert(Source source) {
+        return sourceDao.insert(source).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
     }
 
-    @Override
-    public int delete(Object object) {
-        return sourceDao.delete((Source) object).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+    public int insertSourceIdFromTuples(String source_id, Source.TYPE type,Set<SourceTuple> insertTupleSet) {
+        int totalUpdates=0;
+        insertTupleSet.stream().forEach(sourceTuple -> {
+            Source source = getSource(sourceTuple);
+            if( source !=null){
+                update(source.addSource_id(source_id));
+            } else {
+                insert(new Source(sourceTuple.getSource(), sourceTuple.getSection(), type).addSource_id(source_id));
+            }
+
+        });
+        return totalUpdates;
     }
 
-    @Override
-    public int update(Object object) {
-        return sourceDao.update((Source) object).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+    public int delete(Source source) {
+        return sourceDao.delete(source).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+    }
+
+    public int deleteSourceIdFromTuples(String source_id, Set<SourceTuple> deleteTupleSet) {
+        int totalUpdates=0;
+        for ( SourceTuple st: deleteTupleSet) {
+
+            totalUpdates += delete(getSource(st).removeSource_id(source_id));
+        }
+        return totalUpdates;
+    }
+
+    public int deleteSourceId(String source_id) {
+        return deleteSourceIdFromTuples(source_id, new HashSet<>(getSourceTuplesBySourceId(source_id)));
+    }
+
+    public int update(Source source) {
+        return sourceDao.update(source).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
     }
 
     public Source getSource(String name, int section){
@@ -55,19 +78,45 @@ public class SourceDaoHelper implements DaoHelper{
         }
     }
 
-    public List<String> getSourceList(){
+    public Source getSource(SourceTuple sourceTuple){
+        return getSource(sourceTuple.getSource(), sourceTuple.getSection());
+    }
+
+    public List<SourceTuple> getSourceTuplesBySourceId(String source_id){
         try{
-            return sourceDao.getSources().subscribeOn(DEFAULT_SCHEDULER).blockingGet().stream().map(Source::getSource).collect(Collectors.toList());
+            return sourceDao.getSourceTuplesBySourceId(source_id).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
         } catch (EmptyResultSetException e) {
             return null;
         }
     }
 
-    public static String toSourceSting(String source, int section){
-        return source + "." + section;
+    public List<Source> getSourcesBySourceId(String source_id){
+        try{
+            return sourceDao.getSourcesBySourceId(source_id).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        } catch (EmptyResultSetException e) {
+            return null;
+        }
     }
-    public static List<String> getColumnList() {
-        return Arrays.stream(Columns.values()).map(Enum::name).collect(Collectors.toList());
+
+    public List<String> getSourceNames(){
+        try{
+            return sourceDao.getSourceNames().subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        } catch (EmptyResultSetException e) {
+            return null;
+        }
     }
+
+    public List<Integer> getSourceSections( String name){
+        try{
+            return sourceDao.getSourceSections(name).subscribeOn(DEFAULT_SCHEDULER).blockingGet();
+        } catch (EmptyResultSetException e) {
+            return null;
+        }
+    }
+
+    public static List<String> getColumnList(){
+        return Arrays.stream(Source.Columns.values()).map(columns -> columns.name()).collect(Collectors.toList());
+    }
+
 
 }

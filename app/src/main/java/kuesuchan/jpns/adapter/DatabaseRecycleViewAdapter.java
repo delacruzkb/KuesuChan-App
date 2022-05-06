@@ -46,10 +46,10 @@ public class DatabaseRecycleViewAdapter extends RecyclerView.Adapter<DatabaseRec
         holder.rowInfo.setText(objects.get(position).toString());
         holder.databaseListItemParent.setOnLongClickListener(view -> {
             if (selectedRow instanceof Vocabulary){
-                DatabaseInputDialog dialog = new DatabaseInputDialog(context, objects.get(position) , AppDatabase.Table.Vocabulary);
+                DatabaseInputDialog dialog = new DatabaseInputDialog(context, objects.get(position) , AppDatabase.SearchableTable.Vocabulary);
                 dialog.show();
             } else if ( selectedRow instanceof KanjiWriting) {
-                DatabaseInputDialog dialog = new DatabaseInputDialog(context, selectedRow, AppDatabase.Table.Kanji_Writing);
+                DatabaseInputDialog dialog = new DatabaseInputDialog(context, selectedRow, AppDatabase.SearchableTable.Kanji_Writing);
                 dialog.show();
            }
 

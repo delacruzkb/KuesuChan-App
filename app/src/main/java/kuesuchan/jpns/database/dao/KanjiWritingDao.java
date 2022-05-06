@@ -25,7 +25,7 @@ public interface KanjiWritingDao {
     @Update
     Single<Integer> update(KanjiWriting kanjiWriting);
 
-    @Query("SELECT * from KanjiWriting where UPPER(kanji)=UPPER(:kanji)")
+    @Query("SELECT * from KanjiWriting where UPPER(kanji) LIKE UPPER(:kanji)")
     Single<KanjiWriting> getKanjiWriting(String kanji);
 
     @RawQuery

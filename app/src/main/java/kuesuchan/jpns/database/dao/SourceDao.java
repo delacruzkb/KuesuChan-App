@@ -27,8 +27,11 @@ public interface SourceDao {
     @Query("SELECT * from SOURCE where UPPER(name) LIKE UPPER(:name) and section = :section")
     Single<Source> getSource(String name, int section);
 
-    @Query("SELECT name,section from SOURCE where source_ids LIKE '%' + source_ids + '%'")
-    Single<List<SourceTuple>> getSourcesBySourceId(String source_id);
+    @Query("SELECT name,section from SOURCE where source_ids LIKE '%' + :source_id + '%'")
+    Single<List<SourceTuple>> getSourceTuplesBySourceId(String source_id);
+
+    @Query("SELECT * from SOURCE where source_ids LIKE '%' + :source_id + '%'")
+    Single<List<Source>> getSourcesBySourceId(String source_id);
 
     @Query("SELECT name from SOURCE group by name")
     Single<List<String>> getSourceNames();

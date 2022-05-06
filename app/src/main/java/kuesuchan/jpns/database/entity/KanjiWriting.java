@@ -10,38 +10,36 @@ import kuesuchan.jpns.database.Converters;
 
 @Entity
 public class KanjiWriting {
+
+    public static enum Columns{
+        kanji,
+        japanese_reading,
+        phonetic_reading,
+        strokes,
+        meaning
+    }
+
     @PrimaryKey
     @NonNull
     private  String kanji;
 
+    @NonNull
     private String japanese_reading;
 
+    @NonNull
     private String phonetic_reading;
 
     private int strokes;
 
+    @NonNull
     private String meaning;
 
-    @NonNull
-    private Set<String> sources;
-
-    public KanjiWriting(@NonNull String kanji, String japanese_reading, String phonetic_reading, int strokes, String meaning, @NonNull String source) {
-        this.kanji = kanji;
-        this.japanese_reading = japanese_reading;
-        this.phonetic_reading = phonetic_reading;
+    public KanjiWriting(@NonNull String kanji, @NonNull String japanese_reading, @NonNull String phonetic_reading, int strokes, @NonNull String meaning) {
+        this.kanji = kanji.trim();
+        this.japanese_reading = japanese_reading.trim();
+        this.phonetic_reading = phonetic_reading.trim();
         this.strokes = strokes;
-        this.meaning = meaning;
-        sources = new HashSet<>();
-        sources.add(source);
-    }
-
-    public KanjiWriting(@NonNull String kanji, String japanese_reading, String phonetic_reading, int strokes, String meaning, @NonNull Set<String> sources) {
-        this.kanji = kanji;
-        this.japanese_reading = japanese_reading;
-        this.phonetic_reading = phonetic_reading;
-        this.strokes = strokes;
-        this.meaning = meaning;
-        this.sources = sources;
+        this.meaning = meaning.trim();
     }
 
     @Override
@@ -50,8 +48,7 @@ public class KanjiWriting {
                 "\nJapanese_reading: '" + japanese_reading + "'" +
                 "\nPhonetic_reading: '" + phonetic_reading + "'" +
                 "\nStrokes: " + strokes +
-                "\nMeaning: '" + meaning + "'" +
-                "\nsources: " + sources;
+                "\nMeaning: '" + meaning + "'";
     }
 
     @Override
@@ -68,7 +65,7 @@ public class KanjiWriting {
     }
 
     public void setKanji(@NonNull String kanji) {
-        this.kanji = kanji;
+        this.kanji = kanji.trim();
     }
 
     public String getJapanese_reading() {
@@ -76,7 +73,7 @@ public class KanjiWriting {
     }
 
     public void setJapanese_reading(String japanese_reading) {
-        this.japanese_reading = japanese_reading;
+        this.japanese_reading = japanese_reading.trim();
     }
 
     public String getPhonetic_reading() {
@@ -84,7 +81,7 @@ public class KanjiWriting {
     }
 
     public void setPhonetic_reading(String phonetic_reading) {
-        this.phonetic_reading = phonetic_reading;
+        this.phonetic_reading = phonetic_reading.trim();
     }
 
     public int getStrokes() {
@@ -100,31 +97,7 @@ public class KanjiWriting {
     }
 
     public void setMeaning(String meaning) {
-        this.meaning = meaning;
+        this.meaning = meaning.trim();
     }
 
-    @NonNull
-    public Set<String> getSources() {
-        return sources;
-    }
-
-    public String getSourceString(){
-        return Converters.stringSetToString(sources);
-    }
-
-    public void setSources(@NonNull Set<String> sources) {
-        this.sources = sources;
-    }
-
-    public void setSourceFromString(@NonNull String sources) {
-        this.sources = Converters.fromStringToStringSet(sources);
-    }
-
-    public void addSource(String source){
-        sources.add(source);
-    }
-
-    public void addSources(Set<String> sources){
-        this.sources.addAll(sources);
-    }
 }

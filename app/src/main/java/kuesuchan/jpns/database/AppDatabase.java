@@ -26,6 +26,12 @@ public abstract class AppDatabase extends RoomDatabase {
         Kanji_Writing,
         Source
     }
+
+    public static enum SearchableTable{
+        Vocabulary,
+        Kanji_Writing
+    }
+
     public abstract VocabularyDao vocabularyDao();
     public abstract KanjiWritingDao kanjiWritingDao();
     public abstract SourceDao sourceDao();
@@ -46,11 +52,11 @@ public abstract class AppDatabase extends RoomDatabase {
     }
 
     public VocabularyDaoHelper getVocabularyDaoHelper(){
-        return new VocabularyDaoHelper(vocabularyDao());
+        return new VocabularyDaoHelper(vocabularyDao(), sourceDao());
     }
 
     public KanjiWritingDaoHelper getKanjiWritingDaoHelper(){
-        return new KanjiWritingDaoHelper(kanjiWritingDao());
+        return new KanjiWritingDaoHelper(kanjiWritingDao(), sourceDao());
     }
 
     public SourceDaoHelper getSourceDaoHelper(){
